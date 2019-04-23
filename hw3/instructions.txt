@@ -1,0 +1,61 @@
+In this homework we explore how unauthenticated encryption is not the right tool for session tokens.
+
+Background:
+Counter mode (CTR) of encryption is a CPA-secure encryption method, meaning that it provides confidentiality but not authenticity. You can learn about counter mode here:
+
+https://youtube.com/watch?v=6EbyCGrdKh8 (Links to an external site.)Links to an external site.
+https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_(CTR) (Links to an external site.)Links to an external site.
+As you can see, CTR mode uses a key and an IV. Both of these are random 16-byte values. The IV is ideally chosen randomly for each encryption. Both the IV and key are required for decryption.
+
+You can do most of this homework without any significant understanding of how CTR mode works -- it is enough to understand its properties by trial and error.
+
+In this homework you will obtain administrator access to this simple page: http://web.engr.oregonstate.edu/cgi-bin/cgiwrap/rosulekm/ctr-hw.cgi (Links to an external site.)Links to an external site..
+
+You can see the (Perl!) source code of this script here: http://web.engr.oregonstate.edu/cgi-bin/cgiwrap/rosulekm/highlight.cgi?ctr-hw.cgi (Links to an external site.)Links to an external site.
+
+I have tried to comment things reasonably, but I know none of you know Perl. Here's what the page is doing. When you "create a new account" the page generates an authentication token for that account:
+
+generate a random 16-byte IV
+perform AES-CTR encryption (with a fixed and secret key) on a string of the form "USERNAME:auth" to generate a ciphertext.
+set a cookie of the form "cs478token=IVHEX_CIPHERTEXTHEX" -- so the IV is given in hex (32 hex chars) and the ciphertext is given in hex, and they are separated by an underscore.
+When you connect again to the page, the cookie is checked using the complementary logic:
+
+fetch the IV & ciphertext from the cs478token cookie
+decrypt with AES-CTR
+if the result of decryption has the form "USERNAME:auth", then consider the connection authenticated as USERNAME (otherwise complain).
+    The script is configured to not give out an authentication token for user "root" -- but your final goal in this assignment is to obtain such an authentication token. If you are successful, the page will display a secret message.
+
+    Problem 1:
+    Please make yourself familiar with CTR mode encryption, using the resources above or anything else you can find.
+
+    Write a script/program/subroutine that allows you to easily do the following:
+
+    given IV, key encoded in hex, and plaintext (as a normal ASCII string), output the result of AES-128-CTR decryption in hex
+    given IV, key, and ciphertext encoded in hex, output the result of AES-128-CTR decryption (as a normal ASCII string).
+    The perl script uses openssl command-line tool to do the actual encryption. For example, you can do
+
+    echo -n "plaintext data" | openssl enc -aes-128-ctr -K <hexkey> -iv <hexiv>
+
+    to encrypt the plaintext data (-n argument to echo suppresses trailing newline). You can use `xxd -p` and `xxd -r -p` to convert to/from hex.
+
+    AES-128-CTR is also a standard, and you are also welcome to use standard encryption libraries from whatever programming language you like. Please read ahead to see what else I'm asking you to do, and make sure you are comfortable doing it in the language of your choice (I can't actually think of a worse choice than bash).
+
+    Please show the source of your script/program, and say what is the result of encrypting plaintext "cs478" with key 5A557AC90890B2ACD59C536FE4279BBC and IV 5A557AC90890B2ACD59C536FE4279BBC.
+
+    Problem 2
+    Now play around with tampering the ciphertext. Generate a ciphertext under a known plaintext + IV + key. Then try removing different bytes from the beginning/middle/end of the ciphertext, and seeing what happens when the modified ciphertext is decrypted.
+
+    Explain any patterns that you are able to deduce, and show your reasoning/evidence.
+
+    Problem 3
+    In this problem it will be useful to view ciphertexts and plaintexts in binary. Play around and see what happens when you flip bits in a ciphertext and then decrypt that modified ciphertexts.
+
+    Explain any patterns that you are able to deduce, and show your reasoning/evidence. Also show any code that you wrote to help understanding what's happening in binary.
+
+    Problem 4
+    Do your best job of justifying your pattern from the previous problem using the definition of CTR-mode decryption. Recall that CTR decryption is defined by LaTeX: m_i = \textsf{AES}(k, iv+i) \oplus c_i m i = AES ( k , i v + i ) ⊕ c i . This expression involves the XOR operation, but your tampering of the ciphertext involved flipping bits. How can "flip this set of bits in c" be expressed as an XOR operation?
+
+    Problem 5
+    Using what you have observed, obtain "root" access to the Perl script described above. Tamper with the ciphertext in your access token, to turn it into an access token that authenticates the user "root".
+
+    Describe all your steps. What username did you use to get the initial access token? How did you tamper with the ciphertext received from the server? What was your reasoning in doing this? (refer to your reasoning in previous problems) How did you change the browser's cookie? What is the secret administrator message?
